@@ -583,6 +583,31 @@ class HolidayDB:
             _LOGGER.error("从数据库加载数据失败: %s", e)
         return data
 
+    def get_day_detail(self, day_str: str) -> Dict[str, Any]:
+        try:
+            if not os.path.exists(self.db_path):
+                return {}
+            with self._get_conn() as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.execute(
+                    "SELECT * FROM holiday_detail WHERE day = ?", (day_str,)
+                )
+                row = cursor.fetchone()
+                if not row:
+                    return {}
+                item = dict(row)
+                item["solar_festival"] = self._parse_json_list(
+                    item.get("solar_festival")
+                )
+                item["lunar_festival"] = self._parse_json_list(
+                    item.get("lunar_festival")
+                )
+                item["festival"] = self._parse_json_list(item.get("festival"))
+                return item
+        except Exception as e:
+            _LOGGER.error("从数据库获取日期详情失败: %s", e)
+            return {}
+
     def _parse_json_list(self, value):
         if not value:
             return []
@@ -851,7 +876,8 @@ class Holiday:
                             target_year + 1, int(month), int(day)
                         )
                 else:
-                    target_date = datetime_class.strptime(key, "%Y-%m-%d").date()
+                    target_date = datetime_class.strptime(
+                        key, "%Y-%m-%d").date()
                     if target_date < today:
                         continue
                 items.append(
@@ -1133,6 +1159,8 @@ class Holiday:
         if not self._holiday_json:
             self.get_holidays_from_server()
 
+        day_key = date.strftime("%Y%m%d")
+
         y_str = str(date.year)
         m_d_key = "{:0>2d}{:0>2d}".format(date.month, date.day)
 
@@ -1145,6 +1173,9 @@ class Holiday:
                 item = self._holiday_json[y_str][m_d_key]
                 if isinstance(item, dict):
                     detail = dict(item)
+
+        if not detail:
+            detail = self.db.get_day_detail(day_key) or detail
 
         festival_info = self.get_festival_info(date)
         detail.update(festival_info)
@@ -1223,9 +1254,9 @@ if __name__ == "__main__":
 
     # 强制更新数据（传入 days=0）
     # print("正在强制拉取最新数据...")
-    h.get_holidays_from_server(days=0)
+    # h.get_holidays_from_server(days=0)
     print(h.get_day_detail(datetime.datetime.now()))
-    print("今天是否节假日:", h.is_holiday_today())
-    print("明天是否节假日:", h.is_holiday_tomorrow())
-    print("最近节假日信息:", h.nearest_holiday_info())
-    print("最近节假日信息:", h.get_nearest_holiday())
+    # print("今天是否节假日:", h.is_holiday_today())
+    # print("明天是否节假日:", h.is_holiday_tomorrow())
+    # print("最近节假日信息:", h.nearest_holiday_info())
+    # print("最近节假日信息:", h.get_nearest_holiday())
