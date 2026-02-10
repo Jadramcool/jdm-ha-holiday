@@ -33,6 +33,380 @@ HOLIDAY_DB_FILE = os.path.join(DATA_DIR, "data.db")
 # API 地址
 API_URL = "http://tool.bitefu.net/jiari/"
 
+_SOLAR_FESTIVAL = {
+    "0101": ["元旦节"],
+    "0202": ["世界湿地日"],
+    "0210": ["国际气象节"],
+    "0214": ["情人节"],
+    "0301": ["国际海豹日"],
+    "0303": ["全国爱耳日"],
+    "0305": ["学雷锋纪念日"],
+    "0308": ["妇女节"],
+    "0312": ["植树节", "孙中山逝世纪念日"],
+    "0314": ["国际警察日"],
+    "0315": ["消费者权益日"],
+    "0317": ["中国国医节", "国际航海日"],
+    "0321": ["世界森林日", "消除种族歧视国际日", "世界儿歌日"],
+    "0322": ["世界水日"],
+    "0323": ["世界气象日"],
+    "0324": ["世界防治结核病日"],
+    "0325": ["全国中小学生安全教育日"],
+    "0330": ["巴勒斯坦国土日"],
+    "0401": ["愚人节", "全国爱国卫生运动月(四月)", "税收宣传月(四月)"],
+    "0407": ["世界卫生日"],
+    "0422": ["世界地球日"],
+    "0423": ["世界图书和版权日"],
+    "0424": ["亚非新闻工作者日"],
+    "0501": ["劳动节"],
+    "0504": ["青年节"],
+    "0505": ["碘缺乏病防治日"],
+    "0508": ["世界红十字日"],
+    "0512": ["国际护士节"],
+    "0515": ["国际家庭日"],
+    "0517": ["国际电信日"],
+    "0518": ["国际博物馆日"],
+    "0520": ["全国学生营养日"],
+    "0523": ["国际牛奶日"],
+    "0531": ["世界无烟日"],
+    "0601": ["国际儿童节"],
+    "0605": ["世界环境保护日"],
+    "0606": ["全国爱眼日"],
+    "0617": ["防治荒漠化和干旱日"],
+    "0623": ["国际奥林匹克日"],
+    "0625": ["全国土地日"],
+    "0626": ["国际禁毒日"],
+    "0701": ["中国共·产党诞辰", "香港回归纪念日", "世界建筑日"],
+    "0702": ["国际体育记者日"],
+    "0707": ["抗日战争纪念日"],
+    "0711": ["世界人口日"],
+    "0730": ["非洲妇女日"],
+    "0801": ["建军节"],
+    "0808": ["中国男子节(爸爸节)"],
+    "0815": ["抗日战争胜利纪念"],
+    "0908": ["国际扫盲日", "国际新闻工作者日"],
+    "0909": ["毛·泽东逝世纪念"],
+    "0910": ["中国教师节"],
+    "0914": ["世界清洁地球日"],
+    "0916": ["国际臭氧层保护日"],
+    "0918": ["九·一八事变纪念日"],
+    "0920": ["国际爱牙日"],
+    "0927": ["世界旅游日"],
+    "0928": ["孔子诞辰"],
+    "1001": ["国庆节", "世界音乐日", "国际老人节"],
+    "1002": ["国庆节假日", "国际和平与民主自由斗争日"],
+    "1003": ["国庆节假日"],
+    "1004": ["世界动物日"],
+    "1006": ["老人节"],
+    "1008": ["全国高血压日", "世界视觉日"],
+    "1009": ["世界邮政日", "万国邮联日"],
+    "1010": ["辛亥革命纪念日", "世界精神卫生日"],
+    "1013": ["世界保健日", "国际教师节"],
+    "1014": ["世界标准日"],
+    "1015": ["国际盲人节(白手杖节)"],
+    "1016": ["世界粮食日"],
+    "1017": ["世界消除贫困日"],
+    "1022": ["世界传统医药日"],
+    "1024": ["联合国日"],
+    "1031": ["世界勤俭日"],
+    "1107": ["十月社会主义革命纪念日"],
+    "1108": ["中国记者日"],
+    "1109": ["全国消防安全宣传教育日"],
+    "1110": ["世界青年节"],
+    "1111": ["光棍节", "国际科学与和平周(本日所属的一周)"],
+    "1112": ["孙中山诞辰纪念日"],
+    "1114": ["世界糖尿病日"],
+    "1116": ["国际宽容日"],
+    "1117": ["国际大学生节", "世界学生节"],
+    "1120": ["彝族年"],
+    "1121": ["彝族年", "世界问候日", "世界电视日"],
+    "1122": ["彝族年"],
+    "1129": ["国际声援巴勒斯坦人民国际日"],
+    "1201": ["世界艾滋病日"],
+    "1203": ["世界残疾人日"],
+    "1205": ["国际志愿人员日"],
+    "1208": ["国际儿童电视日"],
+    "1209": ["世界足球日"],
+    "1210": ["世界人权日"],
+    "1212": ["西安事变纪念日"],
+    "1213": ["南京大屠杀(1937年)纪念日"],
+    "1220": ["澳门回归纪念日"],
+    "1221": ["国际篮球日"],
+    "1224": ["平安夜"],
+    "1225": ["圣诞节"],
+    "1226": ["毛·泽东诞辰纪念日"],
+}
+
+_LUNAR_FESTIVAL = {
+    "0101": ["春节"],
+    "0115": ["元宵节"],
+    "0202": ["春龙节"],
+    "0505": ["端午节"],
+    "0707": ["七夕情人节"],
+    "0715": ["中元节"],
+    "0815": ["中秋节"],
+    "0909": ["重阳节"],
+    "1208": ["腊八节"],
+    "1223": ["小年"],
+    "1229": ["除夕"],
+}
+
+_WEEKDAY_FESTIVAL = {
+    "0150": ["世界防治麻风病日"],
+    "0520": ["母亲节"],
+    "0530": ["全国助残日"],
+    "0630": ["父亲节"],
+    "0730": ["被奴役国家周"],
+    "0932": ["国际和平日"],
+    "0940": ["国际聋人节", "世界儿童日"],
+    "0950": ["世界海事日"],
+    "1011": ["国际住房日"],
+    "1013": ["国际减轻自然灾害日(减灾日)"],
+    "1144": ["感恩节"],
+}
+
+_WEEKDAY_FESTIVAL_CACHE: Dict[int, Dict[str, List[str]]] = {}
+
+
+def _festival_handle(params: Dict[str, List[str]], month: int, day: int) -> List[str]:
+    key = "{:0>2d}{:0>2d}".format(month, day)
+    return params.get(key, [])
+
+
+def _build_weekday_festival(year: int) -> Dict[str, List[str]]:
+    if year in _WEEKDAY_FESTIVAL_CACHE:
+        return _WEEKDAY_FESTIVAL_CACHE[year]
+    data: Dict[str, List[str]] = {}
+    for key, value in _WEEKDAY_FESTIVAL.items():
+        month = int(key[:2])
+        w = int(key[3:])
+        n = int(key[2])
+        first = datetime.date(year, month, 1).weekday() + 1
+        day = 1 + 7 - first + w + (n - 1) * 7
+        if day > 30:
+            day = day - 7
+        date_key = "{:0>2d}{:0>2d}".format(month, day)
+        data[date_key] = value
+    _WEEKDAY_FESTIVAL_CACHE[year] = data
+    return data
+
+
+class LunarDate:
+    _startDate = datetime.date(1900, 1, 31)
+
+    @staticmethod
+    def fromSolarDate(year, month, day):
+        solarDate = datetime.date(year, month, day)
+        offset = (solarDate - LunarDate._startDate).days
+        return LunarDate._fromOffset(offset)
+
+    @staticmethod
+    def _enumMonth(yearInfo):
+        months = [(i, 0) for i in range(1, 13)]
+        leapMonth = yearInfo % 16
+        if leapMonth == 0:
+            pass
+        elif leapMonth <= 12:
+            months.insert(leapMonth, (leapMonth, 1))
+        else:
+            raise ValueError("yearInfo %r mod 16 should in [0, 12]" % yearInfo)
+
+        for month, isLeapMonth in months:
+            if isLeapMonth:
+                days = (yearInfo >> 16) % 2 + 29
+            else:
+                days = (yearInfo >> (16 - month)) % 2 + 29
+            yield month, days, isLeapMonth
+
+    @classmethod
+    def _fromOffset(cls, offset):
+        def _calcMonthDay(yearInfo, offset):
+            for month, days, isLeapMonth in cls._enumMonth(yearInfo):
+                if offset < days:
+                    break
+                offset -= days
+            return (month, offset + 1, isLeapMonth)
+
+        offset = int(offset)
+
+        for idx, yearDay in enumerate(Info.yearDays()):
+            if offset < yearDay:
+                break
+            offset -= yearDay
+        year = 1900 + idx
+
+        yearInfo = Info.yearInfos[idx]
+        month, day, isLeapMonth = _calcMonthDay(yearInfo, offset)
+        return LunarDate(year, month, day, isLeapMonth)
+
+    def __init__(self, year, month, day, isLeapMonth=False):
+        self.year = year
+        self.month = month
+        self.day = day
+        self.isLeapMonth = bool(isLeapMonth)
+
+
+class Info:
+    yearInfos = [
+        0x04BD8,
+        0x04AE0,
+        0x0A570,
+        0x054D5,
+        0x0D260,
+        0x0D950,
+        0x16554,
+        0x056A0,
+        0x09AD0,
+        0x055D2,
+        0x04AE0,
+        0x0A5B6,
+        0x0A4D0,
+        0x0D250,
+        0x1D255,
+        0x0B540,
+        0x0D6A0,
+        0x0ADA2,
+        0x095B0,
+        0x14977,
+        0x04970,
+        0x0A4B0,
+        0x0B4B5,
+        0x06A50,
+        0x06D40,
+        0x1AB54,
+        0x02B60,
+        0x09570,
+        0x052F2,
+        0x04970,
+        0x06566,
+        0x0D4A0,
+        0x0EA50,
+        0x06E95,
+        0x05AD0,
+        0x02B60,
+        0x186E3,
+        0x092E0,
+        0x1C8D7,
+        0x0C950,
+        0x0D4A0,
+        0x1D8A6,
+        0x0B550,
+        0x056A0,
+        0x1A5B4,
+        0x025D0,
+        0x092D0,
+        0x0D2B2,
+        0x0A950,
+        0x0B557,
+        0x06CA0,
+        0x0B550,
+        0x15355,
+        0x04DA0,
+        0x0A5D0,
+        0x14573,
+        0x052D0,
+        0x0A9A8,
+        0x0E950,
+        0x06AA0,
+        0x0AEA6,
+        0x0AB50,
+        0x04B60,
+        0x0AAE4,
+        0x0A570,
+        0x05260,
+        0x0F263,
+        0x0D950,
+        0x05B57,
+        0x056A0,
+        0x096D0,
+        0x04DD5,
+        0x04AD0,
+        0x0A4D0,
+        0x0D4D4,
+        0x0D250,
+        0x0D558,
+        0x0B540,
+        0x0B5A0,
+        0x195A6,
+        0x095B0,
+        0x049B0,
+        0x0A974,
+        0x0A4B0,
+        0x0B27A,
+        0x06A50,
+        0x06D40,
+        0x0AF46,
+        0x0AB60,
+        0x09570,
+        0x04AF5,
+        0x04970,
+        0x064B0,
+        0x074A3,
+        0x0EA50,
+        0x06B58,
+        0x05AC0,
+        0x0AB60,
+        0x096D5,
+        0x092E0,
+        0x0C960,
+        0x0D954,
+        0x0D4A0,
+        0x0DA50,
+        0x07552,
+        0x056A0,
+        0x0ABB7,
+        0x025D0,
+        0x092D0,
+        0x0CAB5,
+        0x0A950,
+        0x0B4A0,
+        0x0BAA4,
+        0x0AD50,
+        0x055D9,
+        0x04BA0,
+        0x0A5B0,
+        0x15176,
+        0x052B0,
+        0x0A930,
+        0x07954,
+        0x06AA0,
+        0x0AD50,
+        0x05B52,
+        0x04B60,
+        0x0A6E6,
+        0x0A4E0,
+        0x0D260,
+        0x0EA65,
+        0x0D530,
+        0x05AA0,
+        0x076A3,
+        0x096D0,
+        0x04AFB,
+        0x04AD0,
+        0x0A4D0,
+        0x1D0B6,
+        0x0D250,
+        0x0D520,
+        0x0DD45,
+        0x0B5A0,
+        0x056D0,
+        0x055B2,
+        0x049B0,
+        0x0A577,
+        0x0A4B0,
+        0x0AA50,
+        0x1B255,
+        0x06D20,
+        0x0ADA0,
+    ]
+
+    def yearInfo2yearDay(yearInfo):
+        info = int(yearInfo)
+        months = 12 + (1 if info % 16 else 0)
+        return 29 * months + ((info // 16) & ((1 << months) - 1)).bit_count()
+
+    def yearDays():
+        return [Info.yearInfo2yearDay(x) for x in Info.yearInfos]
+
 
 class HolidayDB:
     """简化的 SQLite 存储封装，用于数据备份。"""
@@ -44,6 +418,15 @@ class HolidayDB:
     def _get_conn(self):
         """获取数据库连接"""
         return sqlite3.connect(self.db_path, check_same_thread=False)
+
+    def _ensure_columns(self, conn, table_name: str, columns: Dict[str, str]):
+        cursor = conn.execute(f"PRAGMA table_info({table_name})")
+        existing = {row[1] for row in cursor.fetchall()}
+        for name, col_type in columns.items():
+            if name in existing:
+                continue
+            conn.execute(
+                f"ALTER TABLE {table_name} ADD COLUMN {name} {col_type}")
 
     def _init_table(self):
         """初始化全量数据表"""
@@ -81,9 +464,21 @@ class HolidayDB:
                         daynum INTEGER,
                         weeknum INTEGER,
                         avoid TEXT,
-                        suit TEXT
+                        suit TEXT,
+                        solar_festival TEXT,
+                        lunar_festival TEXT,
+                        festival TEXT
                     )
                 """
+                )
+                self._ensure_columns(
+                    conn,
+                    "holiday_detail",
+                    {
+                        "solar_festival": "TEXT",
+                        "lunar_festival": "TEXT",
+                        "festival": "TEXT",
+                    },
                 )
                 conn.commit()
         except Exception as e:
@@ -106,8 +501,9 @@ class HolidayDB:
                         REPLACE INTO holiday_detail (
                             day, status, type, typename, unixtime, yearname, 
                             nonglicn, nongli, shengxiao, jieqi, weekcn, 
-                            week1, week2, week3, daynum, weeknum, avoid, suit
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            week1, week2, week3, daynum, weeknum, avoid, suit,
+                            solar_festival, lunar_festival, festival
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                         (
                             item.get("day"),
@@ -128,6 +524,12 @@ class HolidayDB:
                             item.get("weeknum"),
                             item.get("avoid"),
                             item.get("suit"),
+                            json.dumps(item.get("solar_festival")
+                                       or [], ensure_ascii=False),
+                            json.dumps(item.get("lunar_festival")
+                                       or [], ensure_ascii=False),
+                            json.dumps(item.get("festival")
+                                       or [], ensure_ascii=False),
                         ),
                     )
                 conn.commit()
@@ -156,6 +558,14 @@ class HolidayDB:
                 cursor = conn.execute("SELECT * FROM holiday_detail")
                 for row in cursor:
                     item = dict(row)  # 转换为字典
+                    item["solar_festival"] = self._parse_json_list(
+                        item.get("solar_festival")
+                    )
+                    item["lunar_festival"] = self._parse_json_list(
+                        item.get("lunar_festival")
+                    )
+                    item["festival"] = self._parse_json_list(
+                        item.get("festival"))
                     day_str = item.get("day")
                     if not day_str or len(day_str) != 8:
                         continue
@@ -172,6 +582,17 @@ class HolidayDB:
         except Exception as e:
             _LOGGER.error("从数据库加载数据失败: %s", e)
         return data
+
+    def _parse_json_list(self, value):
+        if not value:
+            return []
+        try:
+            data = json.loads(value)
+            if isinstance(data, list):
+                return data
+            return []
+        except Exception:
+            return []
 
 
 class Holiday:
@@ -243,7 +664,8 @@ class Holiday:
         """
         current_year = str(today.year)
         next_year = str(today.year + 1)
-        target_years = [y for y in self._holiday_json if y in (current_year, next_year)]
+        target_years = [y for y in self._holiday_json if y in (
+            current_year, next_year)]
         candidates = []
 
         # 将 timezone-aware 的 today 转换为 naive datetime 以便比较
@@ -331,8 +753,10 @@ class Holiday:
                 continue
 
             start, end = self._find_holiday_range(date)
-            before_workdays = self._find_surrounding_workdays(start, look_back=True)
-            after_workdays = self._find_surrounding_workdays(end, look_back=False)
+            before_workdays = self._find_surrounding_workdays(
+                start, look_back=True)
+            after_workdays = self._find_surrounding_workdays(
+                end, look_back=False)
 
             return self._format_holiday_info(
                 today_naive, start, end, before_workdays, after_workdays
@@ -426,7 +850,8 @@ class Holiday:
     ) -> List[Dict[str, Any]]:
         """查找节假日周边连续的工作日（调休）。"""
         workdays = []
-        current = date - timedelta(days=1) if look_back else date + timedelta(days=1)
+        current = date - \
+            timedelta(days=1) if look_back else date + timedelta(days=1)
         step = -1 if look_back else 1
 
         while self.is_holiday_status(current) == 0:
@@ -642,10 +1067,16 @@ class Holiday:
                         w = 0
 
                     # 确保 item 中包含 day 字段 (数据库和内存都可能需要)
+                    day_key_str = str(day_key)
+                    day_int = int(
+                        day_key_str[-2:]) if len(day_key_str) > 2 else int(day_key_str)
                     if "day" not in item:
                         item["day"] = "{}{:0>2d}{:0>2d}".format(
-                            year, month, int(day_key)
+                            year, month, day_int
                         )
+
+                    date_obj = datetime_class(year, month, day_int)
+                    item.update(self.get_festival_info(date_obj))
 
                     # 只要是 休息日(1)、节假日(2) 或 调休上班日(周末且type=0)
                     if t in (1, 2) or (t == 0 and w in (6, 7)):
@@ -670,6 +1101,7 @@ class Holiday:
         y_str = str(date.year)
         m_d_key = "{:0>2d}{:0>2d}".format(date.month, date.day)
 
+        detail: Dict[str, Any] = {}
         if y_str in self._holiday_json:
             if (
                 isinstance(self._holiday_json[y_str], dict)
@@ -677,8 +1109,33 @@ class Holiday:
             ):
                 item = self._holiday_json[y_str][m_d_key]
                 if isinstance(item, dict):
-                    return item
-        return {}
+                    detail = dict(item)
+
+        festival_info = self.get_festival_info(date)
+        detail.update(festival_info)
+        return detail
+
+    def get_festival_info(self, date: datetime.datetime) -> Dict[str, Any]:
+        solar = _festival_handle(_SOLAR_FESTIVAL, date.month, date.day)
+        weekday_map = _build_weekday_festival(date.year)
+        weekday_key = "{:0>2d}{:0>2d}".format(date.month, date.day)
+        weekday = weekday_map.get(weekday_key, [])
+        solar_all = solar + weekday
+
+        lunar = LunarDate.fromSolarDate(date.year, date.month, date.day)
+        lunar_festival = _festival_handle(
+            _LUNAR_FESTIVAL, lunar.month, lunar.day)
+
+        combined = []
+        for name in solar_all + lunar_festival:
+            if name not in combined:
+                combined.append(name)
+
+        return {
+            "solar_festival": solar_all,
+            "lunar_festival": lunar_festival,
+            "festival": combined,
+        }
 
     def is_holiday_status(self, date: datetime.datetime) -> int:
         """获取某天的状态码。
@@ -731,7 +1188,7 @@ if __name__ == "__main__":
 
     # 强制更新数据（传入 days=0）
     # print("正在强制拉取最新数据...")
-    # h.get_holidays_from_server(days=15)
+    # h.get_holidays_from_server(days=0)
     print(h.get_day_detail(datetime.datetime.now()))
     print("今天是否节假日:", h.is_holiday_today())
     print("明天是否节假日:", h.is_holiday_tomorrow())
