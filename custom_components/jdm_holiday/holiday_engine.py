@@ -339,6 +339,49 @@ class Holiday:
 
         return "无最近节假日信息"
 
+    def get_nearest_holiday(
+        self, min_days: int = 0, max_days: int = 60
+    ) -> Optional[Dict[str, Any]]:
+        """获取最近一次节假日的详细信息对象。
+
+        Args:
+            min_days: 最小查找天数范围。
+            max_days: 最大查找天数范围。
+
+        Returns:
+            Optional[Dict]: 包含节假日详细信息的字典，无结果时返回 None。
+        """
+        today = Holiday.today()
+        if not self._holiday_json:
+            self.get_holidays_from_server()
+
+        candidates = self._collect_holiday_candidates(today)
+
+        # 将 timezone-aware 的 today 转换为 naive datetime 以便比较
+        if today.tzinfo is not None:
+            today_naive = today.replace(tzinfo=None)
+        else:
+            today_naive = today
+
+        for date in candidates:
+            days_diff = (date - today_naive).days
+            if not (min_days <= days_diff <= max_days):
+                continue
+
+            # 查找节假日的完整信息
+            year = str(date.year)
+            month_day = date.strftime("%m%d")
+            if year in self._holiday_json and month_day in self._holiday_json[year]:
+                holiday_item = self._holiday_json[year][month_day]
+                return {
+                    "date": date,
+                    "name": holiday_item.get("typename", "未知节假日"),
+                    "days_diff": days_diff,
+                    "full_info": holiday_item,
+                }
+
+        return None
+
     def _find_holiday_range(
         self, date: datetime.datetime
     ) -> Tuple[datetime.datetime, datetime.datetime]:
@@ -664,7 +707,8 @@ if __name__ == "__main__":
     # 强制更新数据（传入 days=0）
     # print("正在强制拉取最新数据...")
     # h.get_holidays_from_server(days=15)
-
+    print(h.get_day_detail(datetime.datetime.now()))
     print("今天是否节假日:", h.is_holiday_today())
     print("明天是否节假日:", h.is_holiday_tomorrow())
     print("最近节假日信息:", h.nearest_holiday_info())
+    print("最近节假日信息:", h.get_nearest_holiday())

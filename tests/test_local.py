@@ -1,12 +1,16 @@
-from holiday_engine import Holiday
 import sys
 import os
 import logging
 
 # Add custom_components/jdm_holiday to path to import holiday_engine directly
 # This avoids triggering __init__.py which depends on homeassistant
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../custom_components/jdm_holiday")))
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../custom_components/jdm_holiday")
+    )
+)
+
+from holiday_engine import Holiday
 
 
 # Configure logging

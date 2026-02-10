@@ -94,6 +94,6 @@ class HolidayBinarySensor(BinarySensorEntity):
             # 获取日期类型："工作日", "休息日", "节假日"
             status = self._engine.is_holiday(date)
             # 只要不是 "工作日"，就认为是放假状态 (On)
-            self._is_on = (status != "工作日")
+            self._is_on = status != "工作日"
         except Exception as e:
             _LOGGER.error("更新二元传感器失败: %s", e)
