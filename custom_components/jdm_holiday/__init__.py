@@ -71,7 +71,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     # 加载 sensor 平台 (提供详细信息的传感器)
     hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(hass, "sensor", DOMAIN, {}, config)
+        hass.helpers.discovery.async_load_platform(
+            hass, "sensor", DOMAIN, {}, config)
+    )
+
+    # 加载 binary_sensor 平台 (提供今天/明天是否放假的布尔状态)
+    hass.async_create_task(
+        hass.helpers.discovery.async_load_platform(
+            hass, "binary_sensor", DOMAIN, {}, config)
     )
 
     # 同时支持显式配置
