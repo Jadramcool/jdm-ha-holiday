@@ -64,7 +64,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _LOGGER.error("Holiday 引擎初始化失败: %s", e)
         return False
 
-    # 注册传感器（sensor）和二元传感器（binary_sensor）平台
+    # 注册传感器（sensor）平台
     # 这里使用 discovery.async_load_platform 动态加载平台
     # 这意味着只要 configuration.yaml 中有 `jdm_holiday:`，这些平台就会自动加载
     # 而不需要用户显式配置 `sensor: - platform: jdm_holiday`
@@ -72,12 +72,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # 加载 sensor 平台 (提供详细信息的传感器)
     hass.async_create_task(
         hass.helpers.discovery.async_load_platform(hass, "sensor", DOMAIN, {}, config)
-    )
-    # 加载 binary_sensor 平台 (提供 是/否 状态的传感器)
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            hass, "binary_sensor", DOMAIN, {}, config
-        )
     )
 
     return True

@@ -47,14 +47,9 @@ async def async_setup_platform(
     # 从全局数据中获取 Holiday 引擎实例
     engine: Holiday = hass.data[DOMAIN]["engine"]
 
-    # 实例化传感器列表
+    # 实例化单一传感器
     sensors = [
-        # 显示最近节假日详情的传感器
-        HolidayInfoSensor(engine),
-        # 显示今天日期类型的传感器
-        HolidayTypeSensor(engine, 0, "Today Holiday Type"),
-        # 显示明天日期类型的传感器
-        HolidayTypeSensor(engine, 1, "Tomorrow Holiday Type"),
+        HolidayCombinedSensor(engine),
     ]
 
     # 将传感器添加到 Home Assistant
@@ -118,19 +113,20 @@ class HolidayTypeSensor(SensorEntity):
             _LOGGER.error("更新节假日类型失败: %s", e)
 
 
-class HolidayInfoSensor(SensorEntity):
-    """节假日详情传感器。
+class HolidayCombinedSensor(SensorEntity):
+    """整合所有节假日信息的单一传感器。
 
-    该传感器显示最近一次节假日的详细安排，包括放假时间、调休情况等。
+    该传感器整合了所有节假日信息，包括今天、明天的日期类型，
+    最近的节假日安排，以及自定义纪念日。
     """
 
     def __init__(self, engine: Holiday):
         """初始化传感器。"""
         self._engine = engine
-        self._attr_name = "Nearest Holiday Info"
-        self._attr_unique_id = "jdm_holiday_nearest_info"
-        self._attr_icon = "mdi:calendar-star"
-        self._state = None
+        self._attr_name = "Holiday"
+        self._attr_unique_id = "jdm_holiday"
+        self._attr_icon = "mdi:calendar"
+        self._state = "正常"
         self._attr_extra_state_attributes = {}
 
     @property
@@ -141,22 +137,44 @@ class HolidayInfoSensor(SensorEntity):
     def update(self) -> None:
         """更新传感器状态。
 
-        获取最近的节假日信息。如果信息过长，State 中只存储摘要，
-        完整信息存储在属性（attributes）中。
+        整合所有节假日信息到属性中，方便前端使用。
         """
         try:
-            # 获取最近的节假日信息文本
-            info = self._engine.nearest_holiday_info()
+            # 获取今天和明天的日期
+            today = self._engine.day(0)
+            tomorrow = self._engine.day(1)
 
-            # HA 数据库对 State 字段有 255 字符长度限制
-            # 如果信息过长，截取前 250 个字符并添加省略号
-            if len(info) > 255:
-                self._state = info[:250] + "..."
-            else:
-                self._state = info
+            # 获取今天的信息
+            today_status = self._engine.is_holiday(today)
+            today_detail = self._engine.get_day_detail(today) or {}
+            today_anniversaries = self._engine.get_anniversaries(today)
 
-            # 将完整信息存储在实体的属性中
-            self._attr_extra_state_attributes["full_info"] = info
+            # 获取明天的信息
+            tomorrow_status = self._engine.is_holiday(tomorrow)
+            tomorrow_detail = self._engine.get_day_detail(tomorrow) or {}
+            tomorrow_anniversaries = self._engine.get_anniversaries(tomorrow)
+
+            # 获取最近节假日信息
+            nearest_info = self._engine.nearest_holiday_info()
+            nearest_holiday = self._engine.get_nearest_holiday() or {}
+
+            # 整合所有数据
+            combined_data = {
+                "today": {
+                    "status": today_status,
+                    "detail": today_detail,
+                    "anniversaries": today_anniversaries,
+                },
+                "tomorrow": {
+                    "status": tomorrow_status,
+                    "detail": tomorrow_detail,
+                    "anniversaries": tomorrow_anniversaries,
+                },
+                "nearest_info": nearest_info,
+                "nearest_holiday": nearest_holiday,
+            }
+
+            self._attr_extra_state_attributes = combined_data
 
         except Exception as e:
-            _LOGGER.error("更新节假日详情失败: %s", e)
+            _LOGGER.error("更新整合传感器失败: %s", e)
