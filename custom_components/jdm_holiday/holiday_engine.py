@@ -186,9 +186,10 @@ class Holiday:
     # 状态码映射
     STATUS_MAP = {0: "工作日", 1: "休息日", 2: "节假日"}
 
-    def __init__(self):
+    def __init__(self, anniversaries=None):
         """初始化 Holiday 类。"""
         self._holiday_json: Dict[str, Any] = {}
+        self._anniversaries = anniversaries or {}  # 自定义纪念日
         self.db = HolidayDB(HOLIDAY_DB_FILE)  # 初始化数据库备份
 
         self.session = requests.Session()
@@ -381,6 +382,30 @@ class Holiday:
                 }
 
         return None
+
+    def get_anniversaries(self, date: datetime.datetime) -> List[str]:
+        """获取指定日期的自定义纪念日。
+
+        Args:
+            date: 要查询的日期对象
+
+        Returns:
+            List[str]: 纪念日列表
+        """
+        # 转换为字符串格式
+        date_str = date.strftime("%Y-%m-%d")
+        month_day_str = date.strftime("%m-%d")
+
+        anniversaries = []
+
+        # 检查完整日期格式的纪念日
+        for key, value in self._anniversaries.items():
+            if key == date_str:
+                anniversaries.append(value)
+            elif key == month_day_str:
+                anniversaries.append(value)
+
+        return anniversaries
 
     def _find_holiday_range(
         self, date: datetime.datetime

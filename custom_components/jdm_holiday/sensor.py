@@ -31,9 +31,9 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """设置 Holiday 传感器平台。
-    
+
     该函数由 __init__.py 中的 discovery 机制调用。
-    
+
     Args:
         hass: Home Assistant 核心实例。
         config: 配置信息。
@@ -46,7 +46,7 @@ async def async_setup_platform(
 
     # 从全局数据中获取 Holiday 引擎实例
     engine: Holiday = hass.data[DOMAIN]["engine"]
-    
+
     # 实例化传感器列表
     sensors = [
         # 显示最近节假日详情的传感器
@@ -56,7 +56,7 @@ async def async_setup_platform(
         # 显示明天日期类型的传感器
         HolidayTypeSensor(engine, 1, "Tomorrow Holiday Type"),
     ]
-    
+
     # 将传感器添加到 Home Assistant
     # update_before_add=True 表示添加前先执行一次 update 以获取初始状态
     async_add_entities(sensors, True)
@@ -64,13 +64,13 @@ async def async_setup_platform(
 
 class HolidayTypeSensor(SensorEntity):
     """节假日类型传感器 (工作日/休息日/节假日)。
-    
+
     该传感器根据偏移量（0表示今天，1表示明天等）显示对应日期的类型。
     """
 
     def __init__(self, engine: Holiday, day_offset: int, name: str):
         """初始化传感器。
-        
+
         Args:
             engine: Holiday 引擎实例。
             day_offset: 天数偏移量，0为今天，1为明天。
@@ -91,7 +91,7 @@ class HolidayTypeSensor(SensorEntity):
 
     def update(self) -> None:
         """更新传感器状态。
-        
+
         该方法会被 HA 定期调用（根据 SCAN_INTERVAL）。
         注意：默认情况下 update 方法是在线程池（Executor）中运行的，
         所以这里可以直接调用可能阻塞的同步方法。
@@ -101,21 +101,26 @@ class HolidayTypeSensor(SensorEntity):
             date = self._engine.day(self._day_offset)
             # 获取该日期的类型（工作日/休息日/节假日）
             self._state = self._engine.is_holiday(date)
-            
+
             # 获取详细信息并添加到 attributes (农历、宜忌等)
             detail = self._engine.get_day_detail(date)
-            if detail:
-                self._attr_extra_state_attributes = detail
-            else:
-                self._attr_extra_state_attributes = {}
-                
+            if not detail:
+                detail = {}
+
+            # 获取自定义纪念日
+            anniversaries = self._engine.get_anniversaries(date)
+            if anniversaries:
+                detail["anniversaries"] = anniversaries
+
+            self._attr_extra_state_attributes = detail
+
         except Exception as e:
             _LOGGER.error("更新节假日类型失败: %s", e)
 
 
 class HolidayInfoSensor(SensorEntity):
     """节假日详情传感器。
-    
+
     该传感器显示最近一次节假日的详细安排，包括放假时间、调休情况等。
     """
 
@@ -135,23 +140,23 @@ class HolidayInfoSensor(SensorEntity):
 
     def update(self) -> None:
         """更新传感器状态。
-        
+
         获取最近的节假日信息。如果信息过长，State 中只存储摘要，
         完整信息存储在属性（attributes）中。
         """
         try:
             # 获取最近的节假日信息文本
             info = self._engine.nearest_holiday_info()
-            
+
             # HA 数据库对 State 字段有 255 字符长度限制
             # 如果信息过长，截取前 250 个字符并添加省略号
             if len(info) > 255:
                 self._state = info[:250] + "..."
             else:
                 self._state = info
-            
+
             # 将完整信息存储在实体的属性中
             self._attr_extra_state_attributes["full_info"] = info
-            
+
         except Exception as e:
             _LOGGER.error("更新节假日详情失败: %s", e)
