@@ -40,12 +40,12 @@ async def async_setup_platform(
         async_add_entities: 用于添加实体到 HA 的回调函数。
         discovery_info: 发现信息，如果不是通过 discovery 加载则为 None。
     """
-    # 如果 discovery_info 为 None，说明不是通过 discovery 加载的，直接返回
-    if discovery_info is None:
-        return
-
-    # 从全局数据中获取 Holiday 引擎实例
-    engine: Holiday = hass.data[DOMAIN]["engine"]
+    # 处理自动发现
+    if discovery_info is not None:
+        engine: Holiday = hass.data[DOMAIN]["engine"]
+    else:
+        # 处理显式配置
+        engine = Holiday(config.get("anniversaries", {}))
 
     # 实例化单一传感器
     sensors = [

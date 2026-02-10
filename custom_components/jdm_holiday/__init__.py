@@ -74,4 +74,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         hass.helpers.discovery.async_load_platform(hass, "sensor", DOMAIN, {}, config)
     )
 
+    # 同时支持显式配置
+    from . import sensor
+
+    hass.async_create_task(
+        sensor.async_setup_platform(hass, config.get(DOMAIN, {}), None, None)
+    )
+
     return True
