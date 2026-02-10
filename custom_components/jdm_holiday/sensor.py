@@ -123,7 +123,7 @@ class HolidayCombinedSensor(SensorEntity):
     def __init__(self, engine: Holiday):
         """初始化传感器。"""
         self._engine = engine
-        self._attr_name = "Holiday"
+        self._attr_name = "jdm_holiday"
         self._attr_unique_id = "jdm_holiday"
         self._attr_icon = "mdi:calendar"
         self._state = "正常"
