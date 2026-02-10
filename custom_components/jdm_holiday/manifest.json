@@ -1,0 +1,11 @@
+{
+  "domain": "jdm_holiday",
+  "name": "JDM Holiday",
+  "codeowners": [],
+  "config_flow": false,
+  "dependencies": [],
+  "documentation": "https://github.com/example/jdm_holiday",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "1.0.0"
+}
