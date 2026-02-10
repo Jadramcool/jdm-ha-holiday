@@ -1,11 +1,15 @@
 {
   "domain": "jdm_holiday",
   "name": "JDM Holiday",
-  "codeowners": [],
+  "codeowners": [
+    "@jadramcool"
+  ],
   "config_flow": false,
   "dependencies": [],
-  "documentation": "https://github.com/example/jdm_holiday",
+  "documentation": "https://github.com/Jadramcool/jdm-ha-holiday/blob/main/custom_components/jdm_holiday/README.md",
+  "homeassistant": "2023.1.0",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Jadramcool/jdm-holiday/issues",
   "requirements": [],
   "version": "1.0.0"
 }
