@@ -831,6 +831,41 @@ class Holiday:
 
         return anniversaries
 
+    def get_future_anniversaries(
+        self, date: datetime.datetime
+    ) -> List[Dict[str, Any]]:
+        today = date.date()
+        items: List[Dict[str, Any]] = []
+        for key, value in self._anniversaries.items():
+            if not value:
+                continue
+            try:
+                if len(key) == 5 and key[2] == "-":
+                    month, day = key.split("-")
+                    target_year = today.year
+                    target_date = datetime.date(
+                        target_year, int(month), int(day)
+                    )
+                    if target_date < today:
+                        target_date = datetime.date(
+                            target_year + 1, int(month), int(day)
+                        )
+                else:
+                    target_date = datetime_class.strptime(key, "%Y-%m-%d").date()
+                    if target_date < today:
+                        continue
+                items.append(
+                    {
+                        "name": value,
+                        "date": target_date.strftime("%Y-%m-%d"),
+                        "days_diff": (target_date - today).days,
+                    }
+                )
+            except Exception:
+                continue
+        items.sort(key=lambda x: x["date"])
+        return items
+
     def _find_holiday_range(
         self, date: datetime.datetime
     ) -> Tuple[datetime.datetime, datetime.datetime]:
@@ -1188,7 +1223,7 @@ if __name__ == "__main__":
 
     # 强制更新数据（传入 days=0）
     # print("正在强制拉取最新数据...")
-    # h.get_holidays_from_server(days=0)
+    h.get_holidays_from_server(days=0)
     print(h.get_day_detail(datetime.datetime.now()))
     print("今天是否节假日:", h.is_holiday_today())
     print("明天是否节假日:", h.is_holiday_tomorrow())

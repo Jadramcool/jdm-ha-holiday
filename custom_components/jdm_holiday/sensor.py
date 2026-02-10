@@ -148,6 +148,7 @@ class HolidayCombinedSensor(SensorEntity):
             today_status = self._engine.is_holiday(today)
             today_detail = self._engine.get_day_detail(today) or {}
             today_anniversaries = self._engine.get_anniversaries(today)
+            future_anniversaries = self._engine.get_future_anniversaries(today)
 
             # 获取明天的信息
             tomorrow_status = self._engine.is_holiday(tomorrow)
@@ -172,6 +173,7 @@ class HolidayCombinedSensor(SensorEntity):
                 },
                 "nearest_info": nearest_info,
                 "nearest_holiday": nearest_holiday,
+                "anniversaries_future": future_anniversaries,
             }
 
             self._attr_extra_state_attributes = combined_data
