@@ -9,6 +9,7 @@ import voluptuous as vol
 
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
@@ -22,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
-            {vol.Optional("anniversaries"): vol.Schema({vol.Any(str): str})}
+            {vol.Optional("anniversaries"): vol.Schema({cv.string: cv.string})}
         )
     },
     extra=vol.ALLOW_EXTRA,
@@ -71,14 +72,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     # 加载 sensor 平台 (提供详细信息的传感器)
     hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            hass, "sensor", DOMAIN, {}, config)
+        async_load_platform(hass, "sensor", DOMAIN, {}, config)
     )
 
     # 加载 binary_sensor 平台 (提供今天/明天是否放假的布尔状态)
     hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            hass, "binary_sensor", DOMAIN, {}, config)
+        async_load_platform(hass, "binary_sensor", DOMAIN, {}, config)
     )
 
     return True
