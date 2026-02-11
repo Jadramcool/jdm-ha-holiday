@@ -1007,6 +1007,39 @@ class Holiday:
 
         return all_candidates[0]
 
+    def get_nearest_jieqi(self, min_days: int = 0, max_days: int = 60) -> Optional[Dict[str, Any]]:
+        """获取最近一次节气的详细信息。
+
+        Args:
+            min_days: 最小查找天数范围。
+            max_days: 最大查找天数范围。
+
+        Returns:
+            Optional[Dict]: 包含节气详细信息的字典，无结果时返回 None。
+        """
+        today = Holiday.today()
+        if not self._holiday_json:
+            self.get_holidays_from_server()
+
+        if today.tzinfo is not None:
+            today_naive = today.replace(tzinfo=None)
+        else:
+            today_naive = today
+        
+        today_naive = today_naive.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        for n in range(min_days, max_days + 1):
+            target_date = today_naive + timedelta(days=n)
+            detail = self.get_day_detail(target_date)
+            jieqi = detail.get("jieqi")
+            if jieqi:
+                return {
+                    "date": target_date,
+                    "name": jieqi,
+                    "days_diff": n
+                }
+        return None
+
     def get_anniversaries(self, date: datetime.datetime) -> List[str]:
         """获取指定日期的自定义纪念日。
 

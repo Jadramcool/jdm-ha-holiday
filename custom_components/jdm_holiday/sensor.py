@@ -96,6 +96,7 @@ class HolidayCombinedSensor(SensorEntity):
             nearest_holiday = self._engine.get_nearest_statutory_holiday() or {}
             # 优化：传入 future_anniversaries 避免重复计算
             nearest_festival = self._engine.get_nearest_festival(anniversaries=future_anniversaries) or {}
+            nearest_jieqi = self._engine.get_nearest_jieqi() or {}
 
             # 3. 获取今天的信息
             today_status = self._engine.is_holiday(today)
@@ -124,6 +125,7 @@ class HolidayCombinedSensor(SensorEntity):
                 "nearest_info": nearest_info,
                 "nearest_holiday": nearest_holiday,
                 "nearest_festival": nearest_festival,
+                "nearest_jieqi": nearest_jieqi,
                 "anniversaries_future": future_anniversaries,
             }
 
