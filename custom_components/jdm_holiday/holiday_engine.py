@@ -872,7 +872,7 @@ class Holiday:
             if year in self._holiday_json and month_day in self._holiday_json[year]:
                 holiday_item = self._holiday_json[year][month_day]
                 return {
-                    "date": date,
+                    "date": date.strftime("%Y-%m-%d"),
                     "name": holiday_item.get("typename", "未知节假日"),
                     "days_diff": days_diff,
                     "full_info": holiday_item,
@@ -920,7 +920,7 @@ class Holiday:
             if year in self._holiday_json and month_day in self._holiday_json[year]:
                 holiday_item = self._holiday_json[year][month_day]
                 all_candidates.append({
-                    "date": date,
+                    "date": date.strftime("%Y-%m-%d"),
                     "name": holiday_item.get("typename", "未知节假日"),
                     "days_diff": days_diff,
                     "full_info": holiday_item,
@@ -941,7 +941,7 @@ class Holiday:
                 days_diff = (d - today_naive).days
                 if min_days <= days_diff <= max_days:
                     all_candidates.append({
-                        "date": d,
+                        "date": d.strftime("%Y-%m-%d"),
                         "name": names[0],
                         "days_diff": days_diff,
                         "full_info": {"festival": names},
@@ -971,7 +971,7 @@ class Holiday:
                 days_diff = (d_dt - today_naive).days
                 if min_days <= days_diff <= max_days:
                     all_candidates.append({
-                        "date": d_dt,
+                        "date": d_dt.strftime("%Y-%m-%d"),
                         "name": names[0],
                         "days_diff": days_diff,
                         "full_info": {"festival": names},
@@ -990,7 +990,7 @@ class Holiday:
                 days_diff = item['days_diff']
                 if min_days <= days_diff <= max_days:
                     all_candidates.append({
-                        "date": d_dt,
+                        "date": d_dt.strftime("%Y-%m-%d"),
                         "name": item['name'],
                         "days_diff": days_diff,
                         "full_info": {"festival": [item['name']]},
@@ -1034,7 +1034,7 @@ class Holiday:
             jieqi = detail.get("jieqi")
             if jieqi:
                 return {
-                    "date": target_date,
+                    "date": target_date.strftime("%Y-%m-%d"),
                     "name": jieqi,
                     "days_diff": n
                 }
