@@ -89,6 +89,9 @@ class HolidayBinarySensor(BinarySensorEntity):
         判断目标日期是否为“工作日”。如果不是工作日（即休息日或节假日），则 is_on 为 True。
         """
         try:
+            # 检查是否需要更新数据
+            self._engine.get_holidays_from_server()
+
             # 获取目标日期
             date = self._engine.day(self._day_offset)
             # 获取日期类型："工作日", "休息日", "节假日"

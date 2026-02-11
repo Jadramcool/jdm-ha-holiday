@@ -84,6 +84,9 @@ class HolidayCombinedSensor(SensorEntity):
         整合所有节假日信息到属性中，方便前端使用。
         """
         try:
+            # 检查是否需要更新数据
+            self._engine.get_holidays_from_server()
+
             # 获取今天和明天的日期
             today = self._engine.day(0)
             tomorrow = self._engine.day(1)
