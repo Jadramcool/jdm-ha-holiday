@@ -755,6 +755,9 @@ class Holiday:
         """
         type_val = 0
         if isinstance(item, dict):
+            # 兼容处理：typename 存在即认为是节日，或者 type=2
+            # 实际上有些数据 type=2 是法定节假日，type=1 是周末
+            # 原始逻辑只判断 type==2
             type_val = int(item.get("type", 0))
         else:
             type_val = int(item)
@@ -821,10 +824,10 @@ class Holiday:
 
         return "无最近节假日信息"
 
-    def get_nearest_holiday(
+    def get_nearest_statutory_holiday(
         self, min_days: int = 0, max_days: int = 60
     ) -> Optional[Dict[str, Any]]:
-        """获取最近一次节假日的详细信息对象。
+        """获取最近一次法定节假日的详细信息对象。
 
         Args:
             min_days: 最小查找天数范围。
@@ -837,13 +840,13 @@ class Holiday:
         if not self._holiday_json:
             self.get_holidays_from_server()
 
-        candidates = self._collect_holiday_candidates(today)
-
         # 将 timezone-aware 的 today 转换为 naive datetime 以便比较
         if today.tzinfo is not None:
             today_naive = today.replace(tzinfo=None)
         else:
             today_naive = today
+
+        candidates = self._collect_holiday_candidates(today)
 
         for date in candidates:
             days_diff = (date - today_naive).days
@@ -861,8 +864,130 @@ class Holiday:
                     "days_diff": days_diff,
                     "full_info": holiday_item,
                 }
-
         return None
+
+    def get_nearest_festival(
+        self, min_days: int = 0, max_days: int = 60, anniversaries: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """获取最近一次节日（含法定、公历、农历、纪念日）的详细信息对象。
+
+        Args:
+            min_days: 最小查找天数范围。
+            max_days: 最大查找天数范围。
+            anniversaries: 可选的预计算纪念日列表，避免重复计算。
+
+        Returns:
+            Optional[Dict]: 包含节假日详细信息的字典，无结果时返回 None。
+        """
+        today = Holiday.today()
+        if not self._holiday_json:
+            self.get_holidays_from_server()
+
+        # 将 timezone-aware 的 today 转换为 naive datetime 以便比较
+        if today.tzinfo is not None:
+            today_naive = today.replace(tzinfo=None)
+        else:
+            today_naive = today
+
+        all_candidates = []
+
+        # 1. 收集法定节假日候选日期 (priority=1)
+        statutory_candidates = self._collect_holiday_candidates(today)
+        for date in statutory_candidates:
+            days_diff = (date - today_naive).days
+            if not (min_days <= days_diff <= max_days):
+                continue
+            
+            year = str(date.year)
+            month_day = date.strftime("%m%d")
+            if year in self._holiday_json and month_day in self._holiday_json[year]:
+                holiday_item = self._holiday_json[year][month_day]
+                all_candidates.append({
+                    "date": date,
+                    "name": holiday_item.get("typename", "未知节假日"),
+                    "days_diff": days_diff,
+                    "full_info": holiday_item,
+                    "priority": 1
+                })
+
+        # 2. 收集公历节日 (priority=2)
+        for date_str, names in _SOLAR_FESTIVAL.items():
+            month = int(date_str[:2])
+            day = int(date_str[2:])
+            try:
+                # 尝试今年
+                d = datetime_class(today_naive.year, month, day)
+                if d < today_naive:
+                    # 如果已过，尝试明年
+                    d = datetime_class(today_naive.year + 1, month, day)
+                
+                days_diff = (d - today_naive).days
+                if min_days <= days_diff <= max_days:
+                    all_candidates.append({
+                        "date": d,
+                        "name": names[0],
+                        "days_diff": days_diff,
+                        "full_info": {"festival": names},
+                        "priority": 2
+                    })
+            except ValueError:
+                continue
+
+        # 3. 收集农历节日 (priority=2)
+        for date_str, names in _LUNAR_FESTIVAL.items():
+            month = int(date_str[:2])
+            day = int(date_str[2:])
+            try:
+                # 获取今天的农历年份
+                ld_today = LunarDate.fromSolarDate(today_naive.year, today_naive.month, today_naive.day)
+                
+                # 尝试今年的农历日期
+                d = LunarDate.toSolarDate(ld_today.year, month, day)
+                d_dt = datetime_class(d.year, d.month, d.day)
+                
+                if d_dt < today_naive:
+                    # 如果已过，尝试明年
+                    d = LunarDate.toSolarDate(ld_today.year + 1, month, day)
+                    d_dt = datetime_class(d.year, d.month, d.day)
+                
+                days_diff = (d_dt - today_naive).days
+                if min_days <= days_diff <= max_days:
+                    all_candidates.append({
+                        "date": d_dt,
+                        "name": names[0],
+                        "days_diff": days_diff,
+                        "full_info": {"festival": names},
+                        "priority": 2
+                    })
+            except Exception:
+                continue
+
+        # 4. 收集自定义纪念日 (priority=0)
+        if anniversaries is None:
+            anniversaries = self.get_future_anniversaries(today)
+            
+        for item in anniversaries:
+            try:
+                d_dt = datetime_class.strptime(item['date'], "%Y-%m-%d")
+                days_diff = item['days_diff']
+                if min_days <= days_diff <= max_days:
+                    all_candidates.append({
+                        "date": d_dt,
+                        "name": item['name'],
+                        "days_diff": days_diff,
+                        "full_info": {"festival": [item['name']]},
+                        "priority": 0
+                    })
+            except Exception:
+                continue
+
+        if not all_candidates:
+            return None
+
+        # 排序：先按天数差（从小到大），再按优先级（从小到大，越小越高）
+        all_candidates.sort(key=lambda x: (x['days_diff'], x['priority']))
+
+        return all_candidates[0]
 
     def get_anniversaries(self, date: datetime.datetime) -> List[str]:
         """获取指定日期的自定义纪念日。
@@ -1365,7 +1490,7 @@ if __name__ == "__main__":
     # 强制更新数据（传入 days=0）
     # print("正在强制拉取最新数据...")
     # h.get_holidays_from_server(days=0)
-    print(h.get_day_detail(datetime.datetime.now()))
+    # print(h.get_day_detail(datetime.datetime.now()))
     # print("今天是否节假日:", h.is_holiday_today())
     # print("明天是否节假日:", h.is_holiday_tomorrow())
     # print("最近节假日信息:", h.nearest_holiday_info())

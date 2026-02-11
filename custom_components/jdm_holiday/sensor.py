@@ -57,62 +57,6 @@ async def async_setup_platform(
     async_add_entities(sensors, True)
 
 
-class HolidayTypeSensor(SensorEntity):
-    """节假日类型传感器 (工作日/休息日/节假日)。
-
-    该传感器根据偏移量（0表示今天，1表示明天等）显示对应日期的类型。
-    """
-
-    def __init__(self, engine: Holiday, day_offset: int, name: str):
-        """初始化传感器。
-
-        Args:
-            engine: Holiday 引擎实例。
-            day_offset: 天数偏移量，0为今天，1为明天。
-            name: 传感器显示的名称。
-        """
-        self._engine = engine
-        self._day_offset = day_offset
-        self._attr_name = name
-        # 设置唯一 ID，确保 HA 可以唯一标识该实体
-        self._attr_unique_id = f"jdm_holiday_type_{day_offset}"
-        self._attr_icon = "mdi:calendar-question"
-        self._state = None
-
-    @property
-    def native_value(self):
-        """返回传感器的当前状态值。"""
-        return self._state
-
-    def update(self) -> None:
-        """更新传感器状态。
-
-        该方法会被 HA 定期调用（根据 SCAN_INTERVAL）。
-        注意：默认情况下 update 方法是在线程池（Executor）中运行的，
-        所以这里可以直接调用可能阻塞的同步方法。
-        """
-        try:
-            # 根据偏移量计算目标日期
-            date = self._engine.day(self._day_offset)
-            # 获取该日期的类型（工作日/休息日/节假日）
-            self._state = self._engine.is_holiday(date)
-
-            # 获取详细信息并添加到 attributes (农历、宜忌等)
-            detail = self._engine.get_day_detail(date)
-            if not detail:
-                detail = {}
-
-            # 获取自定义纪念日
-            anniversaries = self._engine.get_anniversaries(date)
-            if anniversaries:
-                detail["anniversaries"] = anniversaries
-
-            self._attr_extra_state_attributes = detail
-
-        except Exception as e:
-            _LOGGER.error("更新节假日类型失败: %s", e)
-
-
 class HolidayCombinedSensor(SensorEntity):
     """整合所有节假日信息的单一传感器。
 
@@ -144,20 +88,26 @@ class HolidayCombinedSensor(SensorEntity):
             today = self._engine.day(0)
             tomorrow = self._engine.day(1)
 
-            # 获取今天的信息
-            today_status = self._engine.is_holiday(today)
-            today_detail = self._engine.get_day_detail(today) or {}
-            today_anniversaries = self._engine.get_anniversaries(today)
+            # 1. 预先计算未来纪念日，供后续复用
             future_anniversaries = self._engine.get_future_anniversaries(today)
 
-            # 获取明天的信息
+            # 2. 获取最近节假日信息 (复用纪念日数据)
+            nearest_info = self._engine.nearest_holiday_info()
+            nearest_holiday = self._engine.get_nearest_statutory_holiday() or {}
+            # 优化：传入 future_anniversaries 避免重复计算
+            nearest_festival = self._engine.get_nearest_festival(anniversaries=future_anniversaries) or {}
+
+            # 3. 获取今天的信息
+            today_status = self._engine.is_holiday(today)
+            today_detail = self._engine.get_day_detail(today) or {}
+            # 优化：直接从 detail 中获取 anniversaries，避免重复调用 get_anniversaries
+            today_anniversaries = today_detail.get("anniversaries", [])
+
+            # 4. 获取明天的信息
             tomorrow_status = self._engine.is_holiday(tomorrow)
             tomorrow_detail = self._engine.get_day_detail(tomorrow) or {}
-            tomorrow_anniversaries = self._engine.get_anniversaries(tomorrow)
-
-            # 获取最近节假日信息
-            nearest_info = self._engine.nearest_holiday_info()
-            nearest_holiday = self._engine.get_nearest_holiday() or {}
+            # 优化：直接从 detail 中获取 anniversaries
+            tomorrow_anniversaries = tomorrow_detail.get("anniversaries", [])
 
             # 整合所有数据
             combined_data = {
@@ -173,6 +123,7 @@ class HolidayCombinedSensor(SensorEntity):
                 },
                 "nearest_info": nearest_info,
                 "nearest_holiday": nearest_holiday,
+                "nearest_festival": nearest_festival,
                 "anniversaries_future": future_anniversaries,
             }
 
