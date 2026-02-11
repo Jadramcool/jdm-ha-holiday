@@ -215,20 +215,21 @@ class LunarDate:
         if idx < 0 or idx >= len(Info.yearInfos):
             raise ValueError(f"Year {year} out of range")
         yearInfo = Info.yearInfos[idx]
-        
+
         found = False
         for m, d, is_leap in cls._enumMonth(yearInfo):
             if m == month and is_leap == isLeapMonth:
                 found = True
                 break
             offset += d
-        
+
         if not found:
-             raise ValueError(f"Invalid lunar date: {year}-{month}-{day} (leap={isLeapMonth})")
+            raise ValueError(
+                f"Invalid lunar date: {year}-{month}-{day} (leap={isLeapMonth})")
 
         # 3. 加上当月的天数 (day 是从1开始的)
         offset += (day - 1)
-        
+
         return cls._startDate + timedelta(days=offset)
 
     @staticmethod
@@ -731,6 +732,10 @@ class Holiday:
         else:
             today_naive = today
 
+        # 重置为 00:00:00 以便按日期计算天数差，避免因时间差异导致漏掉今天
+        today_naive = today_naive.replace(
+            hour=0, minute=0, second=0, microsecond=0)
+
         for y in target_years:
             dates = self._holiday_json[y]
             if not isinstance(dates, dict):
@@ -807,6 +812,10 @@ class Holiday:
         else:
             today_naive = today
 
+        # 重置为 00:00:00 以便按日期计算天数差
+        today_naive = today_naive.replace(
+            hour=0, minute=0, second=0, microsecond=0)
+
         for date in candidates:
             days_diff = (date - today_naive).days
             if not (min_days <= days_diff <= max_days):
@@ -845,6 +854,10 @@ class Holiday:
             today_naive = today.replace(tzinfo=None)
         else:
             today_naive = today
+
+        # 重置为 00:00:00 以便按日期计算天数差
+        today_naive = today_naive.replace(
+            hour=0, minute=0, second=0, microsecond=0)
 
         candidates = self._collect_holiday_candidates(today)
 
@@ -889,6 +902,10 @@ class Holiday:
         else:
             today_naive = today
 
+        # 重置为 00:00:00 以便按日期计算天数差
+        today_naive = today_naive.replace(
+            hour=0, minute=0, second=0, microsecond=0)
+
         all_candidates = []
 
         # 1. 收集法定节假日候选日期 (priority=1)
@@ -897,7 +914,7 @@ class Holiday:
             days_diff = (date - today_naive).days
             if not (min_days <= days_diff <= max_days):
                 continue
-            
+
             year = str(date.year)
             month_day = date.strftime("%m%d")
             if year in self._holiday_json and month_day in self._holiday_json[year]:
@@ -920,7 +937,7 @@ class Holiday:
                 if d < today_naive:
                     # 如果已过，尝试明年
                     d = datetime_class(today_naive.year + 1, month, day)
-                
+
                 days_diff = (d - today_naive).days
                 if min_days <= days_diff <= max_days:
                     all_candidates.append({
@@ -939,17 +956,18 @@ class Holiday:
             day = int(date_str[2:])
             try:
                 # 获取今天的农历年份
-                ld_today = LunarDate.fromSolarDate(today_naive.year, today_naive.month, today_naive.day)
-                
+                ld_today = LunarDate.fromSolarDate(
+                    today_naive.year, today_naive.month, today_naive.day)
+
                 # 尝试今年的农历日期
                 d = LunarDate.toSolarDate(ld_today.year, month, day)
                 d_dt = datetime_class(d.year, d.month, d.day)
-                
+
                 if d_dt < today_naive:
                     # 如果已过，尝试明年
                     d = LunarDate.toSolarDate(ld_today.year + 1, month, day)
                     d_dt = datetime_class(d.year, d.month, d.day)
-                
+
                 days_diff = (d_dt - today_naive).days
                 if min_days <= days_diff <= max_days:
                     all_candidates.append({
@@ -965,7 +983,7 @@ class Holiday:
         # 4. 收集自定义纪念日 (priority=0)
         if anniversaries is None:
             anniversaries = self.get_future_anniversaries(today)
-            
+
         for item in anniversaries:
             try:
                 d_dt = datetime_class.strptime(item['date'], "%Y-%m-%d")
@@ -1051,7 +1069,8 @@ class Holiday:
 
         # 获取今天的农历年份，用于计算每年重复的农历纪念日
         try:
-            ld_today = LunarDate.fromSolarDate(today.year, today.month, today.day)
+            ld_today = LunarDate.fromSolarDate(
+                today.year, today.month, today.day)
             current_lunar_year = ld_today.year
         except Exception:
             current_lunar_year = today.year  # Fallback
