@@ -835,24 +835,54 @@ class Holiday:
     def get_anniversaries(self, date: datetime.datetime) -> List[str]:
         """获取指定日期的自定义纪念日。
 
-        Args:
-            date: 要查询的日期对象
-
-        Returns:
-            List[str]: 纪念日列表
+        支持的配置格式（key）：
+        - "YYYY-MM-DD": 公历一次性纪念日（仅在该日期触发）
+        - "MM-DD": 公历每年纪念日
+        - "nYYYY-MM-DD": 农历一次性纪念日
+        - "nMM-DD": 农历每年纪念日
         """
-        # 转换为字符串格式
-        date_str = date.strftime("%Y-%m-%d")
-        month_day_str = date.strftime("%m-%d")
-
         anniversaries = []
 
-        # 检查完整日期格式的纪念日
+        # 公历部分
+        g_year = date.year
+        g_month = date.month
+        g_day = date.day
+
+        # 农历部分
+        ld = LunarDate.fromSolarDate(g_year, g_month, g_day)
+        l_year = ld.year
+        l_month = ld.month
+        l_day = ld.day
+
         for key, value in self._anniversaries.items():
-            if key == date_str:
-                anniversaries.append(value)
-            elif key == month_day_str:
-                anniversaries.append(value)
+            if not key:
+                continue
+
+            # 判断 Key 类型
+            is_lunar = key.startswith('n')
+            clean_key = key[1:] if is_lunar else key
+
+            try:
+                parts = [int(p) for p in clean_key.split('-')]
+            except ValueError:
+                continue
+
+            if is_lunar:
+                # 农历匹配
+                if len(parts) == 3:  # nYYYY-MM-DD
+                    if parts[0] == l_year and parts[1] == l_month and parts[2] == l_day:
+                        anniversaries.append(value)
+                elif len(parts) == 2:  # nMM-DD
+                    if parts[0] == l_month and parts[1] == l_day:
+                        anniversaries.append(value)
+            else:
+                # 公历匹配
+                if len(parts) == 3:  # YYYY-MM-DD
+                    if parts[0] == g_year and parts[1] == g_month and parts[2] == g_day:
+                        anniversaries.append(value)
+                elif len(parts) == 2:  # MM-DD
+                    if parts[0] == g_month and parts[1] == g_day:
+                        anniversaries.append(value)
 
         return anniversaries
 
