@@ -199,6 +199,38 @@ class LunarDate:
         offset = (solarDate - LunarDate._startDate).days
         return LunarDate._fromOffset(offset)
 
+    @classmethod
+    def toSolarDate(cls, year, month, day, isLeapMonth=False):
+        """将农历日期转换为公历日期"""
+        # 1. 计算从 1900 到目标年份之前所有年份的总天数
+        offset = 0
+        for y in range(1900, year):
+            idx = y - 1900
+            if idx < 0 or idx >= len(Info.yearInfos):
+                raise ValueError(f"Year {y} out of range")
+            offset += Info.yearInfo2yearDay(Info.yearInfos[idx])
+
+        # 2. 计算目标年份中，目标月份之前的天数
+        idx = year - 1900
+        if idx < 0 or idx >= len(Info.yearInfos):
+            raise ValueError(f"Year {year} out of range")
+        yearInfo = Info.yearInfos[idx]
+        
+        found = False
+        for m, d, is_leap in cls._enumMonth(yearInfo):
+            if m == month and is_leap == isLeapMonth:
+                found = True
+                break
+            offset += d
+        
+        if not found:
+             raise ValueError(f"Invalid lunar date: {year}-{month}-{day} (leap={isLeapMonth})")
+
+        # 3. 加上当月的天数 (day 是从1开始的)
+        offset += (day - 1)
+        
+        return cls._startDate + timedelta(days=offset)
+
     @staticmethod
     def _enumMonth(yearInfo):
         months = [(i, 0) for i in range(1, 13)]
@@ -891,11 +923,52 @@ class Holiday:
     ) -> List[Dict[str, Any]]:
         today = date.date()
         items: List[Dict[str, Any]] = []
+
+        # 获取今天的农历年份，用于计算每年重复的农历纪念日
+        try:
+            ld_today = LunarDate.fromSolarDate(today.year, today.month, today.day)
+            current_lunar_year = ld_today.year
+        except Exception:
+            current_lunar_year = today.year  # Fallback
+
         for key, value in self._anniversaries.items():
             if not value:
                 continue
             try:
-                if len(key) == 5 and key[2] == "-":
+                target_date = None
+
+                # 处理农历配置 (以 'n' 开头)
+                if key.startswith('n'):
+                    clean_key = key[1:]
+                    parts = [int(p) for p in clean_key.split('-')]
+
+                    if len(parts) == 3:  # nYYYY-MM-DD (一次性)
+                        l_year, l_month, l_day = parts
+                        try:
+                            target_date = LunarDate.toSolarDate(
+                                l_year, l_month, l_day)
+                            if target_date < today:
+                                continue
+                        except ValueError:
+                            continue
+
+                    elif len(parts) == 2:  # nMM-DD (每年)
+                        l_month, l_day = parts
+                        # 尝试今年的农历日期
+                        try:
+                            t1 = LunarDate.toSolarDate(
+                                current_lunar_year, l_month, l_day)
+                            if t1 >= today:
+                                target_date = t1
+                            else:
+                                # 如果今年的已经过了，计算明年的
+                                target_date = LunarDate.toSolarDate(
+                                    current_lunar_year + 1, l_month, l_day)
+                        except ValueError:
+                            continue
+
+                # 处理公历配置
+                elif len(key) == 5 and key[2] == "-":  # MM-DD (每年)
                     month, day = key.split("-")
                     target_year = today.year
                     target_date = datetime.date(
@@ -905,21 +978,23 @@ class Holiday:
                         target_date = datetime.date(
                             target_year + 1, int(month), int(day)
                         )
-                else:
+                else:  # YYYY-MM-DD (一次性)
                     target_date = datetime_class.strptime(
                         key, "%Y-%m-%d").date()
                     if target_date < today:
                         continue
-                items.append(
-                    {
-                        "name": value,
-                        "date": target_date.strftime("%Y-%m-%d"),
-                        "days_diff": (target_date - today).days,
-                    }
-                )
+
+                if target_date:
+                    items.append(
+                        {
+                            "name": value,
+                            "date": target_date.strftime("%Y-%m-%d"),
+                            "days_diff": (target_date - today).days,
+                        }
+                    )
             except Exception:
                 continue
-        items.sort(key=lambda x: x["date"])
+        items.sort(key=lambda x: x["days_diff"])
         return items
 
     def _find_holiday_range(
@@ -1222,14 +1297,19 @@ class Holiday:
         lunar_festival = _festival_handle(
             _LUNAR_FESTIVAL, lunar.month, lunar.day)
 
+        # 获取自定义纪念日
+        anniversaries = self.get_anniversaries(date)
+
         combined = []
-        for name in solar_all + lunar_festival:
+        # 将纪念日也加入到总节日列表中
+        for name in solar_all + lunar_festival + anniversaries:
             if name not in combined:
                 combined.append(name)
 
         return {
             "solar_festival": solar_all,
             "lunar_festival": lunar_festival,
+            "anniversaries": anniversaries,
             "festival": combined,
         }
 
